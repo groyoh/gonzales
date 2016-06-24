@@ -7,6 +7,12 @@
 
 This library is meant to provide convinient methods to quickly build http handlers.
 
+## Installation
+
+```
+go get -u gopkg.in/groyoh/gonzales.v0
+```
+
 ## API
 
 See [godoc reference](https://godoc.org/github.com/groyoh/gonzales) for detailed API documentation.
@@ -35,3 +41,25 @@ func main() {
 ## License
 
 [MIT](LICENSE.md)
+
+## Development
+
+Clone this repository:
+```bash
+git clone https://github.com/groyoh/gonzales.git && cd gonzales
+```
+
+Install dependencies:
+```bash
+go get -u -t ./...
+```
+
+Run tests:
+```bash
+go test ./...
+```
+
+Lint code:
+```bash
+golint ./...
+```
