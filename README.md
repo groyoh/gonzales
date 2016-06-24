@@ -1,4 +1,4 @@
-# Gonzalez
+# Gonzales
 [![Build Status](https://travis-ci.org/groyoh/gonzales.svg?branch=master)](https://travis-ci.org/groyoh/gonzales?branch=master)
 [![GoDoc](https://godoc.org/github.com/groyoh/gonzales?status.svg)](https://godoc.org/github.com/groyoh/gonzales)
 [![Coverage Status](https://coveralls.io/repos/github/groyoh/gonzales/badge.svg?branch=master)](https://coveralls.io/github/groyoh/gonzales?branch=master)
