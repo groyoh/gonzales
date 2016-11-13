@@ -61,6 +61,37 @@ func TestGonzales_Body(t *testing.T) {
 	st.Expect(t, returnedValue, g)
 }
 
+func TestGonzales_MirrorAllHeaders(t *testing.T) {
+	g := New()
+	returnedValue := g.MirrorAllHeaders()
+	w, req := prepareRequest()
+	req.Header.Add("Foo", "Bar")
+	req.Header.Add("Bar", "Foo")
+
+	g.ServeHTTP(w, req)
+	expectedHeader := http.Header{}
+	expectedHeader.Add("Foo", "Bar")
+	expectedHeader.Add("Bar", "Foo")
+	st.Expect(t, w.Header(), expectedHeader)
+	st.Expect(t, returnedValue, g)
+}
+
+func TestGonzales_MirrorHeader(t *testing.T) {
+	g := New()
+	returnedValue := g.MirrorHeader("Foo", "Bar")
+	w, req := prepareRequest()
+	req.Header.Add("Foo", "Bar")
+	req.Header.Add("Bar", "Foo")
+	req.Header.Add("FooBar", "FooBar")
+
+	g.ServeHTTP(w, req)
+	expectedHeader := http.Header{}
+	expectedHeader.Add("Foo", "Bar")
+	expectedHeader.Add("Bar", "Foo")
+	st.Expect(t, w.Header(), expectedHeader)
+	st.Expect(t, returnedValue, g)
+}
+
 func TestGonzales_chaining(t *testing.T) {
 	g := New()
 	g.Body("Hello").Status(http.StatusNotFound).Header("Foo", "Bar")

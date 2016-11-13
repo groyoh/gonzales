@@ -2,18 +2,25 @@ package gonzales
 
 import (
 	"net/http"
+	"strings"
 )
 
 // Gonzales is an http handler with convinient methods.
 type Gonzales struct {
-	body   string
-	header http.Header
-	status int
+	body             string
+	header           http.Header
+	status           int
+	mirrorAllHeaders bool
+	mirrorHeaders    map[string]bool
 }
 
 // New creates a new Gonzales struct.
 func New() *Gonzales {
-	return &Gonzales{header: http.Header{}}
+	return &Gonzales{
+		header:           http.Header{},
+		mirrorAllHeaders: false,
+		mirrorHeaders:    make(map[string]bool),
+	}
 }
 
 // Header creates a new Gonzales struct while setting a header.
@@ -49,17 +56,56 @@ func (g *Gonzales) Status(status int) *Gonzales {
 	return g
 }
 
+// MirrorAllHeaders sets the handler to return all the headers
+// from the request in the response.
+func (g *Gonzales) MirrorAllHeaders() *Gonzales {
+	g.mirrorAllHeaders = true
+	return g
+}
+
+// MirrorHeader set the handler to return specific headers from
+// the request in the response.
+func (g *Gonzales) MirrorHeader(names ...string) *Gonzales {
+	for _, name := range names {
+		lowerCaseName := strings.ToLower(name)
+		g.mirrorHeaders[lowerCaseName] = true
+	}
+	return g
+}
+
 // ServerHTTP allows Gonzales to implement the http.Handler interface.
 func (g *Gonzales) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	for k, values := range g.header {
-		for _, v := range values {
-			w.Header().Add(k, v)
-		}
+	responseHeader := w.Header()
+	if g.mirrorAllHeaders {
+		g.copyHeaders(r.Header, responseHeader, allHeaders)
+	} else {
+		g.copyHeaders(r.Header, responseHeader, func(name string) bool {
+			lowerCaseName := strings.ToLower(name)
+			if _, ok := g.mirrorHeaders[lowerCaseName]; ok {
+				return true
+			}
+			return false
+		})
 	}
+	g.copyHeaders(g.header, responseHeader, allHeaders)
 	if g.status != 0 {
 		w.WriteHeader(g.status)
 	}
 	if len(g.body) != 0 {
 		w.Write([]byte(g.body))
+	}
+}
+
+var allHeaders = func(string) bool {
+	return true
+}
+
+func (g *Gonzales) copyHeaders(in http.Header, out http.Header, assert func(string) bool) {
+	for k, values := range in {
+		if assert(k) {
+			for _, v := range values {
+				out.Add(k, v)
+			}
+		}
 	}
 }
