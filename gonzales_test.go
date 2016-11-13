@@ -31,6 +31,34 @@ func TestBody(t *testing.T) {
 	st.Expect(t, w.Body.String(), "Hello")
 }
 
+func TestMirrorAllHeaders(t *testing.T) {
+	g := MirrorAllHeaders()
+	w, req := prepareRequest()
+
+	req.Header.Add("Foo", "Bar")
+	req.Header.Add("Bar", "Foo")
+
+	g.ServeHTTP(w, req)
+	expectedHeader := http.Header{}
+	expectedHeader.Add("Foo", "Bar")
+	expectedHeader.Add("Bar", "Foo")
+	st.Expect(t, w.Header(), expectedHeader)
+}
+
+func TestMirrorHeader(t *testing.T) {
+	g := MirrorHeader("Foo", "Bar")
+	w, req := prepareRequest()
+	req.Header.Add("Foo", "Bar")
+	req.Header.Add("Bar", "Foo")
+	req.Header.Add("FooBar", "FooBar")
+
+	g.ServeHTTP(w, req)
+	expectedHeader := http.Header{}
+	expectedHeader.Add("Foo", "Bar")
+	expectedHeader.Add("Bar", "Foo")
+	st.Expect(t, w.Header(), expectedHeader)
+}
+
 func TestGonzales_Header(t *testing.T) {
 	g := New()
 	returnedValue := g.Header("Foo", "Bar")
@@ -58,6 +86,37 @@ func TestGonzales_Body(t *testing.T) {
 
 	g.ServeHTTP(w, req)
 	st.Expect(t, w.Body.String(), "Hello")
+	st.Expect(t, returnedValue, g)
+}
+
+func TestGonzales_MirrorAllHeaders(t *testing.T) {
+	g := New()
+	returnedValue := g.MirrorAllHeaders()
+	w, req := prepareRequest()
+	req.Header.Add("Foo", "Bar")
+	req.Header.Add("Bar", "Foo")
+
+	g.ServeHTTP(w, req)
+	expectedHeader := http.Header{}
+	expectedHeader.Add("Foo", "Bar")
+	expectedHeader.Add("Bar", "Foo")
+	st.Expect(t, w.Header(), expectedHeader)
+	st.Expect(t, returnedValue, g)
+}
+
+func TestGonzales_MirrorHeader(t *testing.T) {
+	g := New()
+	returnedValue := g.MirrorHeader("Foo", "Bar")
+	w, req := prepareRequest()
+	req.Header.Add("Foo", "Bar")
+	req.Header.Add("Bar", "Foo")
+	req.Header.Add("FooBar", "FooBar")
+
+	g.ServeHTTP(w, req)
+	expectedHeader := http.Header{}
+	expectedHeader.Add("Foo", "Bar")
+	expectedHeader.Add("Bar", "Foo")
+	st.Expect(t, w.Header(), expectedHeader)
 	st.Expect(t, returnedValue, g)
 }
 

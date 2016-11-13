@@ -5,14 +5,14 @@ go:
   - 1.5
   - tip
 
-before_install:
-  - go get -u github.com/golang/lint/golint
+install:
+  - '[[ $TRAVIS_GO_VERSION == "1.5"  ]] || go get -u github.com/golang/lint/golint'
   - go get github.com/mattn/goveralls
   - go get -t ./...
 
 script:
   - diff -u <(echo -n) <(gofmt -s -d ./)
   - diff -u <(echo -n) <(go vet ./...)
-  - diff -u <(echo -n) <(golint ./...)
+  - '[[ $TRAVIS_GO_VERSION == "1.5"  ]] || diff -u <(echo -n) <(golint ./...)'
   - go test -v -race -covermode=atomic -coverprofile=cover.out ./...
   - goveralls -coverprofile=cover.out -service=travis-ci
