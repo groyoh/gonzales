@@ -3,6 +3,7 @@
 [![GoDoc](https://godoc.org/github.com/groyoh/gonzales?status.svg)](https://godoc.org/github.com/groyoh/gonzales)
 [![Coverage Status](https://coveralls.io/repos/github/groyoh/gonzales/badge.svg?branch=master)](https://coveralls.io/github/groyoh/gonzales?branch=master)
 [![Go Report Card](https://goreportcard.com/badge/github.com/groyoh/gonzales)](https://goreportcard.com/report/github.com/groyoh/gonzales)
+[![codebeat badge](https://codebeat.co/badges/2db4ddb7-6154-4f2e-93d1-289cbbb72903)](https://codebeat.co/projects/github-com-groyoh-gonzales)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/groyoh/gonzales/blob/master/LICENSE.md)
 
 This library is meant to provide convinient methods to quickly build http handlers.
