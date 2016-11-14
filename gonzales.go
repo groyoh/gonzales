@@ -1,11 +1,14 @@
 package gonzales
 
 import (
+	"bytes"
+	"encoding/json"
 	"net/http"
 	"strings"
 )
 
 const contentTypeHeader = "Content-Type"
+const jsonContentType = "application/json"
 
 // Gonzales is an http handler with convinient methods.
 type Gonzales struct {
@@ -41,6 +44,12 @@ func Body(body string) *Gonzales {
 	return New().Body(body)
 }
 
+// JSON creates a new Gonzales struct while setting its body
+// from the given interface and sets its Content-Type to "application/json"..
+func JSON(data interface{}) *Gonzales {
+	return New().JSON(data)
+}
+
 // Status creates a new Gonzales struct while setting is http status.
 func Status(status int) *Gonzales {
 	return New().Status(status)
@@ -73,6 +82,26 @@ func (g *Gonzales) ContentType(contentType string) *Gonzales {
 // Body sets the body of the handler.
 func (g *Gonzales) Body(body string) *Gonzales {
 	g.body = body
+	return g
+}
+
+// JSON sets the body of the handler from the given interface and
+// sets its Content-Type to "application/json".
+func (g *Gonzales) JSON(data interface{}) *Gonzales {
+	buf := &bytes.Buffer{}
+
+	switch data.(type) {
+	case string:
+		buf.WriteString(data.(string))
+	case []byte:
+		buf.Write(data.([]byte))
+	default:
+		if err := json.NewEncoder(buf).Encode(data); err != nil {
+			return g
+		}
+	}
+	g.body = buf.String()
+	g.ContentType(jsonContentType)
 	return g
 }
 

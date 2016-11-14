@@ -39,6 +39,36 @@ func TestBody(t *testing.T) {
 	st.Expect(t, w.Body.String(), "Hello")
 }
 
+func TestJSON_string(t *testing.T) {
+	g := JSON(`{"sentence":"Hello World"}`)
+	w, req := prepareRequest()
+
+	g.ServeHTTP(w, req)
+	st.Expect(t, w.Body.String(), `{"sentence":"Hello World"}`)
+	st.Expect(t, w.Header().Get("Content-Type"), "application/json")
+}
+
+func TestJSON_byte_array(t *testing.T) {
+	g := JSON([]byte(`{"sentence":"Hello World"}`))
+	w, req := prepareRequest()
+
+	g.ServeHTTP(w, req)
+	st.Expect(t, w.Body.String(), `{"sentence":"Hello World"}`)
+	st.Expect(t, w.Header().Get("Content-Type"), "application/json")
+}
+
+func TestJSON_struct(t *testing.T) {
+	data := struct {
+		Sentence string `json:"sentence"`
+	}{"Hello World"}
+	g := JSON(data)
+	w, req := prepareRequest()
+
+	g.ServeHTTP(w, req)
+	st.Expect(t, w.Body.String(), "{\"sentence\":\"Hello World\"}\n")
+	st.Expect(t, w.Header().Get("Content-Type"), "application/json")
+}
+
 func TestMirrorAllHeaders(t *testing.T) {
 	g := MirrorAllHeaders()
 	w, req := prepareRequest()
@@ -104,6 +134,42 @@ func TestGonzales_Body(t *testing.T) {
 
 	g.ServeHTTP(w, req)
 	st.Expect(t, w.Body.String(), "Hello")
+	st.Expect(t, returnedValue, g)
+}
+
+func TestGonzales_JSON_string(t *testing.T) {
+	g := New()
+	returnedValue := g.JSON(`{"sentence":"Hello World"}`)
+	w, req := prepareRequest()
+
+	g.ServeHTTP(w, req)
+	st.Expect(t, w.Body.String(), `{"sentence":"Hello World"}`)
+	st.Expect(t, w.Header().Get("Content-Type"), "application/json")
+	st.Expect(t, returnedValue, g)
+}
+
+func TestGonzales_JSON_byte_array(t *testing.T) {
+	g := New()
+	returnedValue := g.JSON([]byte(`{"sentence":"Hello World"}`))
+	w, req := prepareRequest()
+
+	g.ServeHTTP(w, req)
+	st.Expect(t, w.Body.String(), `{"sentence":"Hello World"}`)
+	st.Expect(t, w.Header().Get("Content-Type"), "application/json")
+	st.Expect(t, returnedValue, g)
+}
+
+func TestGonzales_JSON_struct(t *testing.T) {
+	data := struct {
+		Sentence string `json:"sentence"`
+	}{"Hello World"}
+	g := New()
+	returnedValue := g.JSON(data)
+	w, req := prepareRequest()
+
+	g.ServeHTTP(w, req)
+	st.Expect(t, w.Body.String(), "{\"sentence\":\"Hello World\"}\n")
+	st.Expect(t, w.Header().Get("Content-Type"), "application/json")
 	st.Expect(t, returnedValue, g)
 }
 
