@@ -15,6 +15,14 @@ func TestHeader(t *testing.T) {
 	st.Expect(t, w.Header().Get("Foo"), "Bar")
 }
 
+func TestContentType(t *testing.T) {
+	g := ContentType("application/json")
+	w, req := prepareRequest()
+
+	g.ServeHTTP(w, req)
+	st.Expect(t, w.Header().Get("Content-Type"), "application/json")
+}
+
 func TestStatus(t *testing.T) {
 	g := Status(http.StatusNotFound)
 	w, req := prepareRequest()
@@ -66,6 +74,16 @@ func TestGonzales_Header(t *testing.T) {
 
 	g.ServeHTTP(w, req)
 	st.Expect(t, w.Header().Get("Foo"), "Bar")
+	st.Expect(t, returnedValue, g)
+}
+
+func TestGonzales_ContentType(t *testing.T) {
+	g := New()
+	returnedValue := g.ContentType("application/json")
+	w, req := prepareRequest()
+
+	g.ServeHTTP(w, req)
+	st.Expect(t, w.Header().Get("Content-Type"), "application/json")
 	st.Expect(t, returnedValue, g)
 }
 

@@ -5,6 +5,8 @@ import (
 	"strings"
 )
 
+const contentTypeHeader = "Content-Type"
+
 // Gonzales is an http handler with convinient methods.
 type Gonzales struct {
 	body             string
@@ -12,6 +14,7 @@ type Gonzales struct {
 	status           int
 	mirrorAllHeaders bool
 	mirrorHeaders    map[string]bool
+	contentType      string
 }
 
 // New creates a new Gonzales struct.
@@ -26,6 +29,11 @@ func New() *Gonzales {
 // Header creates a new Gonzales struct while setting a header.
 func Header(key, value string) *Gonzales {
 	return New().Header(key, value)
+}
+
+// ContentType creates a new Gonzales struct while setting a the Content-Type.
+func ContentType(contentType string) *Gonzales {
+	return New().ContentType(contentType)
 }
 
 // Body creates a new Gonzales struct while setting its body.
@@ -53,6 +61,12 @@ func MirrorHeader(names ...string) *Gonzales {
 // Header sets a header of the handler.
 func (g *Gonzales) Header(key, value string) *Gonzales {
 	g.header.Add(key, value)
+	return g
+}
+
+// ContentType creates a new Gonzales struct while setting a the Content-Type.
+func (g *Gonzales) ContentType(contentType string) *Gonzales {
+	g.contentType = contentType
 	return g
 }
 
@@ -100,6 +114,9 @@ func (g *Gonzales) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 	g.copyHeaders(g.header, responseHeader, allHeaders)
+	if g.contentType != "" {
+		responseHeader.Set(contentTypeHeader, g.contentType)
+	}
 	if g.status != 0 {
 		w.WriteHeader(g.status)
 	}
