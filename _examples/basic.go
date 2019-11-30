@@ -1,16 +1,16 @@
 package main
 
 import (
-  "net/http"
+	"net/http"
 
-  "gopkg.in/groyoh/gonzales.v0"
+	"github.com/groyoh/gonzales"
 )
 
 func main() {
-  g := gonzales.Header("Foo", "Bar").
-    Status(404).
-    Body("Not found").
-    MirrorHeader("FooBar", "FooFoo")
-  http.Handle("/", g)
-  http.ListenAndServe(":8000", nil)
+	g := gonzales.Header("Foo", "Bar").
+		Status(404).
+		Body("Not found").
+		MirrorHeader("Foo", "Bar")
+	http.Handle("/", g)
+	http.ListenAndServe(":8000", nil)
 }

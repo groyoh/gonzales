@@ -10,7 +10,7 @@ This library is meant to provide convinient methods to quickly build http handle
 ## Installation
 
 ```
-go get -u gopkg.in/groyoh/gonzales.v0
+go get github.com/groyoh/gonzales
 ```
 
 ## API
@@ -25,7 +25,7 @@ package main
 import (
   "net/http"
 
-  "gopkg.in/groyoh/gonzales.v0"
+  "github.com/groyoh/gonzales"
 )
 
 func main() {
@@ -36,7 +36,6 @@ func main() {
   http.Handle("/", g)
   http.ListenAndServe(":8000", nil)
 }
-
 ```
 
 ## License
