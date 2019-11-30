@@ -19,6 +19,59 @@ See [godoc reference](https://godoc.org/github.com/groyoh/gonzales) for detailed
 
 ## Examples
 
+Gonzales can be useful when mocking APIs in test using the `httptest` package:
+
+```go
+package gonzales_test
+
+import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
+	"github.com/groyoh/gonzales"
+
+	qt "github.com/frankban/quicktest"
+)
+
+type Repository struct {
+	Slug string `json:"slug"`
+}
+
+type GithubClient struct {
+	http.Client
+	BaseURL string
+}
+
+func (c *GithubClient) Repositories() ([]Repository, error) {
+	var repos []Repository
+
+	resp, err := http.Get(c.BaseURL + "/repositories")
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.NewDecoder(resp.Body).Decode(&repos)
+	return repos, err
+}
+
+func TestGithubClient_Repositories(t *testing.T) {
+	c := qt.New(t)
+	g := gonzales.Body(`[{"slug":"gonzales"}]`)
+
+	s := httptest.NewServer(g)
+	client := GithubClient{BaseURL: s.URL}
+	repos, err := client.Repositories()
+
+	c.Assert(err, qt.IsNil)
+	c.Assert(len(repos), qt.Equals, 1)
+	c.Assert(repos[0].Slug, qt.Equals, "gonzales")
+}
+```
+
+You may also use Gonzales to build static handlers:
+
 ```go
 package main
 

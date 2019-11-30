@@ -1,111 +1,182 @@
-package gonzales
+package gonzales_test
 
 import (
-	"github.com/nbio/st"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
+
+	qt "github.com/frankban/quicktest"
+	"github.com/groyoh/gonzales"
 )
 
 func TestHeader(t *testing.T) {
-	g := Header("Foo", "Bar")
-	w, req := prepareRequest()
+	c := qt.New(t)
+	g := gonzales.Header("Foo", "Bar")
 
-	g.ServeHTTP(w, req)
-	st.Expect(t, w.Header().Get("Foo"), "Bar")
+	s := httptest.NewServer(g)
+	resp, err := http.Get(s.URL)
+	c.Assert(err, qt.IsNil)
+
+	c.Assert(resp.Header.Get("Foo"), qt.Equals, "Bar")
 }
 
 func TestStatus(t *testing.T) {
-	g := Status(http.StatusNotFound)
-	w, req := prepareRequest()
+	c := qt.New(t)
+	g := gonzales.Status(http.StatusNotFound)
 
-	g.ServeHTTP(w, req)
-	st.Expect(t, w.Code, http.StatusNotFound)
+	s := httptest.NewServer(g)
+	resp, err := http.Get(s.URL)
+	c.Assert(err, qt.IsNil)
+
+	c.Assert(resp.StatusCode, qt.Equals, http.StatusNotFound)
 }
 
 func TestBody(t *testing.T) {
-	g := Body("Hello")
-	w, req := prepareRequest()
+	c := qt.New(t)
+	g := gonzales.Body("Hello")
 
-	g.ServeHTTP(w, req)
-	st.Expect(t, w.Body.String(), "Hello")
+	s := httptest.NewServer(g)
+	resp, err := http.Get(s.URL)
+	c.Assert(err, qt.IsNil)
+
+	c.Assert(resp.StatusCode, qt.Equals, http.StatusOK)
+	c.Assert(mustGetBody(t, resp), qt.Equals, "Hello")
+}
+
+func TestMirrorBody(t *testing.T) {
+	c := qt.New(t)
+	g := gonzales.MirrorBody()
+
+	s := httptest.NewServer(g)
+	resp, err := http.Post(s.URL, "application/json", strings.NewReader(`[1,2,3]`))
+	c.Assert(err, qt.IsNil)
+
+	c.Assert(resp.StatusCode, qt.Equals, http.StatusOK)
+	c.Assert(mustGetBody(t, resp), qt.Equals, `[1,2,3]`)
+}
+
+func TestMirrorBody_EmptyBody(t *testing.T) {
+	c := qt.New(t)
+	g := gonzales.MirrorBody()
+
+	s := httptest.NewServer(g)
+	resp, err := http.Get(s.URL)
+	c.Assert(err, qt.IsNil)
+
+	c.Assert(resp.StatusCode, qt.Equals, http.StatusOK)
+	c.Assert(mustGetBody(t, resp), qt.Equals, ``)
+}
+
+func TestGonzales_MirrorBody(t *testing.T) {
+	c := qt.New(t)
+	g := gonzales.New().MirrorBody()
+
+	s := httptest.NewServer(g)
+	resp, err := http.Post(s.URL, "application/json", strings.NewReader(`[1,2,3]`))
+	c.Assert(err, qt.IsNil)
+
+	c.Assert(resp.StatusCode, qt.Equals, http.StatusOK)
+	c.Assert(mustGetBody(t, resp), qt.Equals, `[1,2,3]`)
 }
 
 func TestGonzales_Header(t *testing.T) {
-	g := New()
-	returnedValue := g.Header("Foo", "Bar")
-	w, req := prepareRequest()
+	c := qt.New(t)
+	g := gonzales.New()
+	g.Header("Foo", "Bar")
 
-	g.ServeHTTP(w, req)
-	st.Expect(t, w.Header().Get("Foo"), "Bar")
-	st.Expect(t, returnedValue, g)
+	s := httptest.NewServer(g)
+	resp, err := http.Get(s.URL)
+	c.Assert(err, qt.IsNil)
+
+	c.Assert(resp.Header.Get("Foo"), qt.Equals, "Bar")
 }
 
 func TestGonzales_Status(t *testing.T) {
-	g := New()
-	returnedValue := g.Status(http.StatusNotFound)
-	w, req := prepareRequest()
+	c := qt.New(t)
+	g := gonzales.New()
+	g.Status(http.StatusNotFound)
 
-	g.ServeHTTP(w, req)
-	st.Expect(t, w.Code, http.StatusNotFound)
-	st.Expect(t, returnedValue, g)
+	s := httptest.NewServer(g)
+	resp, err := http.Get(s.URL)
+	c.Assert(err, qt.IsNil)
+
+	c.Assert(resp.StatusCode, qt.Equals, http.StatusNotFound)
 }
 
 func TestGonzales_Body(t *testing.T) {
-	g := New()
-	returnedValue := g.Body("Hello")
-	w, req := prepareRequest()
+	c := qt.New(t)
+	g := gonzales.New()
+	g = g.Body("Hello")
 
-	g.ServeHTTP(w, req)
-	st.Expect(t, w.Body.String(), "Hello")
-	st.Expect(t, returnedValue, g)
+	s := httptest.NewServer(g)
+	resp, err := http.Get(s.URL)
+	c.Assert(err, qt.IsNil)
+
+	c.Assert(resp.StatusCode, qt.Equals, http.StatusOK)
+	c.Assert(mustGetBody(t, resp), qt.Equals, "Hello")
 }
 
 func TestGonzales_MirrorAllHeaders(t *testing.T) {
-	g := New()
-	returnedValue := g.MirrorAllHeaders()
-	w, req := prepareRequest()
+	c := qt.New(t)
+	g := gonzales.New()
+	g = g.MirrorAllHeaders()
+
+	s := httptest.NewServer(g)
+
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", s.URL, nil)
+	c.Assert(err, qt.IsNil)
+
 	req.Header.Add("Foo", "Bar")
 	req.Header.Add("Bar", "Foo")
 
-	g.ServeHTTP(w, req)
-	expectedHeader := http.Header{}
-	expectedHeader.Add("Foo", "Bar")
-	expectedHeader.Add("Bar", "Foo")
-	st.Expect(t, w.Header(), expectedHeader)
-	st.Expect(t, returnedValue, g)
+	resp, err := client.Do(req)
+	c.Assert(err, qt.IsNil)
+
+	c.Assert(resp.Header.Get("Foo"), qt.Equals, "Bar")
+	c.Assert(resp.Header.Get("Bar"), qt.Equals, "Foo")
 }
 
 func TestGonzales_MirrorHeader(t *testing.T) {
-	g := New()
-	returnedValue := g.MirrorHeader("Foo", "Bar")
-	w, req := prepareRequest()
+	c := qt.New(t)
+	g := gonzales.New()
+	g = g.MirrorHeader("Foo", "Bar")
+
+	s := httptest.NewServer(g)
+
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", s.URL, nil)
+	c.Assert(err, qt.IsNil)
 	req.Header.Add("Foo", "Bar")
 	req.Header.Add("Bar", "Foo")
 	req.Header.Add("FooBar", "FooBar")
 
-	g.ServeHTTP(w, req)
-	expectedHeader := http.Header{}
-	expectedHeader.Add("Foo", "Bar")
-	expectedHeader.Add("Bar", "Foo")
-	st.Expect(t, w.Header(), expectedHeader)
-	st.Expect(t, returnedValue, g)
+	resp, err := client.Do(req)
+	c.Assert(err, qt.IsNil)
+
+	c.Assert(resp.Header.Get("Foo"), qt.Equals, "Bar")
+	c.Assert(resp.Header.Get("Bar"), qt.Equals, "Foo")
+	c.Assert(resp.Header.Get("FooBar"), qt.Equals, "")
 }
 
 func TestGonzales_chaining(t *testing.T) {
-	g := New()
+	c := qt.New(t)
+	g := gonzales.New()
 	g.Body("Hello").Status(http.StatusNotFound).Header("Foo", "Bar")
 
-	w, req := prepareRequest()
+	s := httptest.NewServer(g)
+	resp, err := http.Get(s.URL)
+	c.Assert(err, qt.IsNil)
 
-	g.ServeHTTP(w, req)
-	st.Expect(t, w.Body.String(), "Hello")
-	st.Expect(t, w.Code, http.StatusNotFound)
-	st.Expect(t, w.Header().Get("Foo"), "Bar")
+	c.Assert(resp.StatusCode, qt.Equals, http.StatusNotFound)
+	c.Assert(mustGetBody(t, resp), qt.Equals, "Hello")
+	c.Assert(resp.Header.Get("Foo"), qt.Equals, "Bar")
 }
 
-func prepareRequest() (*httptest.ResponseRecorder, *http.Request) {
-	req, _ := http.NewRequest("GET", "", nil)
-	w := httptest.NewRecorder()
-	return w, req
+func mustGetBody(t *testing.T, resp *http.Response) string {
+	body, _ := ioutil.ReadAll(resp.Body)
+
+	return string(body)
 }

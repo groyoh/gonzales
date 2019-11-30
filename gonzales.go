@@ -1,6 +1,7 @@
 package gonzales
 
 import (
+	"io/ioutil"
 	"net/http"
 	"strings"
 )
@@ -12,6 +13,7 @@ type Gonzales struct {
 	status           int
 	mirrorAllHeaders bool
 	mirrorHeaders    map[string]bool
+	mirrorBody       bool
 }
 
 // New creates a new Gonzales struct.
@@ -31,6 +33,12 @@ func Header(key, value string) *Gonzales {
 // Body creates a new Gonzales struct while setting its body.
 func Body(body string) *Gonzales {
 	return New().Body(body)
+}
+
+// MirrorBody creates a new Gonzales struct while configuring the handler to
+// mirror the request body into the reponse.
+func MirrorBody() *Gonzales {
+	return New().MirrorBody()
 }
 
 // Status creates a new Gonzales struct while setting is http status.
@@ -56,20 +64,27 @@ func (g *Gonzales) Status(status int) *Gonzales {
 	return g
 }
 
-// MirrorAllHeaders sets the handler to return all the headers
+// MirrorAllHeaders sets the handler to mirror all the headers
 // from the request in the response.
 func (g *Gonzales) MirrorAllHeaders() *Gonzales {
 	g.mirrorAllHeaders = true
 	return g
 }
 
-// MirrorHeader set the handler to return specific headers from
+// MirrorHeader set the handler to mirror specific headers from
 // the request in the response.
 func (g *Gonzales) MirrorHeader(names ...string) *Gonzales {
 	for _, name := range names {
 		lowerCaseName := strings.ToLower(name)
 		g.mirrorHeaders[lowerCaseName] = true
 	}
+	return g
+}
+
+// MirrorBody set the handler to mirror the body from
+// the request in the response.
+func (g *Gonzales) MirrorBody() *Gonzales {
+	g.mirrorBody = true
 	return g
 }
 
@@ -88,12 +103,17 @@ func (g *Gonzales) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 	g.copyHeaders(g.header, responseHeader, allHeaders)
+
 	if g.status != 0 {
 		w.WriteHeader(g.status)
 	}
-	if len(g.body) != 0 {
-		w.Write([]byte(g.body))
+
+	body := []byte(g.body)
+	if g.mirrorBody {
+		body, _ = ioutil.ReadAll(r.Body)
 	}
+
+	w.Write(body)
 }
 
 var allHeaders = func(string) bool {
